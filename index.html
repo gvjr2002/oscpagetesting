@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ShopSim — Mini Ecommerce SPA</title>
+  <style>
+    :root{ --accent:#ff6f00; --muted:#666; --bg:#f6f7fb; --card:#fff; }
+    body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:#111}
+    header{background:#fff;border-bottom:1px solid #e6e6e6;padding:12px 18px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:50}
+    header img.logo{height:36px}
+    .search{flex:1;display:flex;gap:8px}
+    .search input{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px}
+    .search button{padding:8px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer}
+    nav.top-actions{display:flex;gap:10px;align-items:center}
+    nav.top-actions button{background:none;border:1px solid #ddd;padding:8px 10px;border-radius:6px;cursor:pointer}
+    .container{max-width:1100px;margin:18px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:250px 1fr;gap:18px}
+    .sidebar{background:var(--card);padding:12px;border-radius:8px;border:1px solid #eee}
+    .controls{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+    .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+    .card{background:var(--card);border:1px solid #eee;padding:10px;border-radius:8px;display:flex;flex-direction:column;height:100%}
+    .card img{width:100%;height:150px;object-fit:cover;border-radius:6px}
+    .price{color:var(--accent);font-weight:600;margin-top:auto}
+    .btn{padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
+    .btn-primary{background:var(--accent);color:#fff}
+    .muted{color:var(--muted);font-size:13px}
+    .hidden{display:none}
+    footer{padding:20px;text-align:center;color:var(--muted);font-size:13px;margin-top:30px}
+  </style>
+</head>
+<body>
+<header>
+  <div class="search">
+    <input id="searchInput" placeholder="Search products">
+    <button id="searchBtn">Search</button>
+  </div>
+  <nav class="top-actions">
+    <button id="wishlistBtn">Wishlist (<span id="wishCount">0</span>)</button>
+    <button id="cartBtn">Cart (<span id="cartCount">0</span>)</button>
+  </nav>
+</header>
+
+<main class="container">
+  <div class="grid">
+    <aside class="sidebar">
+      <h3>Filters</h3>
+      <div>
+        <strong>Category</strong>
+        <div><label><input type="radio" name="cat" value="all" checked> All</label></div>
+        <div><label><input type="radio" name="cat" value="electronics"> Electronics</label></div>
+        <div><label><input type="radio" name="cat" value="fashion"> Fashion</label></div>
+        <div><label><input type="radio" name="cat" value="home"> Home</label></div>
+      </div>
+    </aside>
+    <section>
+      <div class="controls">
+        <div><strong id="resultsCount">0</strong> results</div>
+        <select id="sortSelect">
+          <option value="relevance">Relevance</option>
+          <option value="price-asc">Price ↑</option>
+          <option value="price-desc">Price ↓</option>
+          <option value="rating">Rating</option>
+        </select>
+      </div>
+      <div id="productsGrid" class="products"></div>
+    </section>
+  </div>
+</main>
+
+<footer>ShopSim — Clean version (no VWO)</footer>
+
+<script>
+const PRODUCTS = [
+  {id:1,title:"Noise-Cancelling Headphones",price:129.99,cat:"electronics",rating:4.5,img:"https://picsum.photos/id/180/400/300",desc:"30hr battery"},
+  {id:2,title:"Smartphone X",price:699,cat:"electronics",rating:4.7,img:"https://picsum.photos/id/1/400/300",desc:"Great camera"},
+  {id:3,title:"Men's Casual Shirt",price:29.99,cat:"fashion",rating:4.1,img:"https://picsum.photos/id/1025/400/300",desc:"Breathable fabric"}
+];
+
+let state = {
+  products: PRODUCTS,
+  cart: JSON.parse(localStorage.getItem('cart') || '[]'),
+  wishlist: JSON.parse(localStorage.getItem('wish') || '[]')
+};
+
+const productsGrid = document.getElementById('productsGrid');
+const resultsCount = document.getElementById('resultsCount');
+const cartCount = document.getElementById('cartCount');
+const wishCount = document.getElementById('wishCount');
+
+function escapeHtml(s){
+  return (s+'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+function renderProducts(list){
+  productsGrid.innerHTML = '';
+  resultsCount.textContent = list.length;
+  list.forEach(p=>{
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <img src="${p.img}" alt="${escapeHtml(p.title)}">
+      <h4>${escapeHtml(p.title)}</h4>
+      <div class="muted">Rating: ${p.rating}</div>
+      <div class="price">$${p.price.toFixed(2)}</div>
+      <button class="btn btn-primary" onclick="addToCart(${p.id})">Add to Cart</button>
+    `;
+    productsGrid.appendChild(div);
+  });
+}
+
+function updateCounts(){
+  cartCount.textContent = state.cart.reduce((s,i)=>s+i.qty,0);
+  wishCount.textContent = state.wishlist.length;
+}
+
+function addToCart(id){
+  const p = state.products.find(x=>x.id===id);
+  if(!p) return;
+  const it = state.cart.find(x=>x.id===id);
+  if(it) it.qty++; else state.cart.push({id:p.id,title:p.title,price:p.price,qty:1});
+  localStorage.setItem('cart', JSON.stringify(state.cart));
+  updateCounts();
+}
+
+function applySearch(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const cat = document.querySelector('input[name="cat"]:checked').value;
+  const sort = document.getElementById('sortSelect').value;
+
+  let out = state.products.filter(p=>{
+    if(cat!=='all' && p.cat!==cat) return false;
+    if(q && !p.title.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if(sort==='price-asc') out.sort((a,b)=>a.price-b.price);
+  if(sort==='price-desc') out.sort((a,b)=>b.price-a.price);
+  if(sort==='rating') out.sort((a,b)=>b.rating-a.rating);
+
+  renderProducts(out);
+}
+
+// events
+renderProducts(state.products);
+updateCounts();
+document.getElementById('searchBtn').onclick = applySearch;
+document.getElementById('sortSelect').onchange = applySearch;
+</script>
+</body>
+</html>
