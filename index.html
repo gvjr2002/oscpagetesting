@@ -2,31 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ShopSim — Mini Ecommerce SPA</title>
   <style>
-    :root{ --accent:#ff6f00; --muted:#666; --bg:#f6f7fb; --card:#fff; }
+    :root{
+      --accent:#ff6f00; --muted:#666; --bg:#f6f7fb; --card:#fff;
+    }
     body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:#111}
     header{background:#fff;border-bottom:1px solid #e6e6e6;padding:12px 18px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:50}
-    header img.logo{height:36px}
     .search{flex:1;display:flex;gap:8px}
     .search input{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px}
     .search button{padding:8px 12px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer}
-    nav.top-actions{display:flex;gap:10px;align-items:center}
-    nav.top-actions button{background:none;border:1px solid #ddd;padding:8px 10px;border-radius:6px;cursor:pointer}
+    nav button{background:none;border:1px solid #ddd;padding:8px 10px;border-radius:6px;cursor:pointer}
     .container{max-width:1100px;margin:18px auto;padding:0 16px}
     .grid{display:grid;grid-template-columns:250px 1fr;gap:18px}
     .sidebar{background:var(--card);padding:12px;border-radius:8px;border:1px solid #eee}
     .controls{display:flex;gap:10px;align-items:center;margin-bottom:12px}
     .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
-    .card{background:var(--card);border:1px solid #eee;padding:10px;border-radius:8px;display:flex;flex-direction:column;height:100%}
+    .card{background:var(--card);border:1px solid #eee;padding:10px;border-radius:8px;display:flex;flex-direction:column}
     .card img{width:100%;height:150px;object-fit:cover;border-radius:6px}
     .price{color:var(--accent);font-weight:600;margin-top:auto}
     .btn{padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
     .btn-primary{background:var(--accent);color:#fff}
     .muted{color:var(--muted);font-size:13px}
     .hidden{display:none}
-    footer{padding:20px;text-align:center;color:var(--muted);font-size:13px;margin-top:30px}
+    footer{text-align:center;color:var(--muted);padding:20px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -35,8 +36,7 @@
     <input id="searchInput" placeholder="Search products">
     <button id="searchBtn">Search</button>
   </div>
-  <nav class="top-actions">
-    <button id="wishlistBtn">Wishlist (<span id="wishCount">0</span>)</button>
+  <nav>
     <button id="cartBtn">Cart (<span id="cartCount">0</span>)</button>
   </nav>
 </header>
@@ -44,54 +44,64 @@
 <main class="container">
   <div class="grid">
     <aside class="sidebar">
-      <h3>Filters</h3>
-      <div>
-        <strong>Category</strong>
-        <div><label><input type="radio" name="cat" value="all" checked> All</label></div>
-        <div><label><input type="radio" name="cat" value="electronics"> Electronics</label></div>
-        <div><label><input type="radio" name="cat" value="fashion"> Fashion</label></div>
-        <div><label><input type="radio" name="cat" value="home"> Home</label></div>
-      </div>
+      <h3>Category</h3>
+      <label><input type="radio" name="cat" value="all" checked> All</label><br>
+      <label><input type="radio" name="cat" value="electronics"> Electronics</label><br>
+      <label><input type="radio" name="cat" value="fashion"> Fashion</label><br>
+      <label><input type="radio" name="cat" value="home"> Home</label>
     </aside>
+
     <section>
       <div class="controls">
-        <div><strong id="resultsCount">0</strong> results</div>
-        <select id="sortSelect">
+        <strong><span id="resultsCount">0</span> results</strong>
+        <select id="sortSelect" style="margin-left:auto">
           <option value="relevance">Relevance</option>
-          <option value="price-asc">Price ↑</option>
-          <option value="price-desc">Price ↓</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
           <option value="rating">Rating</option>
         </select>
       </div>
       <div id="productsGrid" class="products"></div>
     </section>
   </div>
+
+  <!-- CART -->
+  <div id="cartSection" class="hidden" style="margin-top:30px">
+    <h2>Your Cart</h2>
+    <div id="cartList"></div>
+    <h3>Total: $<span id="cartTotal">0</span></h3>
+  </div>
 </main>
 
-<footer>ShopSim — Clean version (no VWO)</footer>
+<footer>ShopSim — Fully Working Demo Ecommerce</footer>
 
 <script>
+/*************** DATA ***************/
 const PRODUCTS = [
-  {id:1,title:"Noise-Cancelling Headphones",price:129.99,cat:"electronics",rating:4.5,img:"https://picsum.photos/id/180/400/300",desc:"30hr battery"},
-  {id:2,title:"Smartphone X",price:699,cat:"electronics",rating:4.7,img:"https://picsum.photos/id/1/400/300",desc:"Great camera"},
-  {id:3,title:"Men's Casual Shirt",price:29.99,cat:"fashion",rating:4.1,img:"https://picsum.photos/id/1025/400/300",desc:"Breathable fabric"}
+  {id:1,title:"Noise-Cancelling Headphones",price:129.99,cat:"electronics",rating:4.5,img:"https://picsum.photos/id/180/400/300"},
+  {id:2,title:"Smartphone X",price:699,cat:"electronics",rating:4.7,img:"https://picsum.photos/id/1/400/300"},
+  {id:3,title:"Men's Casual Shirt",price:29.99,cat:"fashion",rating:4.1,img:"https://picsum.photos/id/1025/400/300"},
+  {id:4,title:"Running Shoes",price:89,cat:"fashion",rating:4.6,img:"https://picsum.photos/id/21/400/300"},
+  {id:5,title:"Blender 500W",price:59.99,cat:"home",rating:4.0,img:"https://picsum.photos/id/1080/400/300"}
 ];
 
 let state = {
   products: PRODUCTS,
-  cart: JSON.parse(localStorage.getItem('cart') || '[]'),
-  wishlist: JSON.parse(localStorage.getItem('wish') || '[]')
+  cart: []
 };
 
+/*************** ELEMENTS ***************/
 const productsGrid = document.getElementById('productsGrid');
 const resultsCount = document.getElementById('resultsCount');
 const cartCount = document.getElementById('cartCount');
-const wishCount = document.getElementById('wishCount');
+const cartSection = document.getElementById('cartSection');
+const cartList = document.getElementById('cartList');
+const cartTotal = document.getElementById('cartTotal');
 
-function escapeHtml(s){
-  return (s+'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
-}
+/*************** HELPERS ***************/
+function escapeHtml(s){return (s+'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
 
+/*************** RENDER ***************/
 function renderProducts(list){
   productsGrid.innerHTML = '';
   resultsCount.textContent = list.length;
@@ -109,21 +119,38 @@ function renderProducts(list){
   });
 }
 
+function renderCart(){
+  cartList.innerHTML = '';
+  let total = 0;
+  state.cart.forEach(i=>{
+    total += i.qty * i.price;
+    const row = document.createElement('div');
+    row.innerHTML = `${escapeHtml(i.title)} × ${i.qty} — $${(i.qty*i.price).toFixed(2)} <button onclick="removeFromCart(${i.id})">Remove</button>`;
+    cartList.appendChild(row);
+  });
+  cartTotal.textContent = total.toFixed(2);
+}
+
 function updateCounts(){
   cartCount.textContent = state.cart.reduce((s,i)=>s+i.qty,0);
-  wishCount.textContent = state.wishlist.length;
 }
 
+/*************** ACTIONS ***************/
 function addToCart(id){
   const p = state.products.find(x=>x.id===id);
-  if(!p) return;
   const it = state.cart.find(x=>x.id===id);
   if(it) it.qty++; else state.cart.push({id:p.id,title:p.title,price:p.price,qty:1});
-  localStorage.setItem('cart', JSON.stringify(state.cart));
   updateCounts();
+  renderCart();
 }
 
-function applySearch(){
+function removeFromCart(id){
+  state.cart = state.cart.filter(i=>i.id!==id);
+  updateCounts();
+  renderCart();
+}
+
+function applyFilters(){
   const q = document.getElementById('searchInput').value.toLowerCase();
   const cat = document.querySelector('input[name="cat"]:checked').value;
   const sort = document.getElementById('sortSelect').value;
@@ -141,11 +168,17 @@ function applySearch(){
   renderProducts(out);
 }
 
-// events
+/*************** EVENTS ***************/
+document.getElementById('searchBtn').onclick = applyFilters;
+document.getElementById('sortSelect').onchange = applyFilters;
+document.querySelectorAll('input[name="cat"]').forEach(r=>r.onchange = applyFilters);
+document.getElementById('cartBtn').onclick = ()=>{
+  cartSection.classList.toggle('hidden');
+};
+
+/*************** INIT ***************/
 renderProducts(state.products);
 updateCounts();
-document.getElementById('searchBtn').onclick = applySearch;
-document.getElementById('sortSelect').onchange = applySearch;
 </script>
 </body>
 </html>
